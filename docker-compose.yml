@@ -1,0 +1,40 @@
+version: "3"
+
+networks:
+  gitea:
+    external: false
+
+services:
+  server:
+    image: docker.gitea.com/gitea:1.25.2
+    container_name: gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    restart: always
+    networks:
+      - gitea
+    volumes:
+      - ./gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3010:3000"
+      - "222:22"
+
+  gitea_runner:
+    image: gitea/act_runner:latest
+    container_name: gitea_runner
+    networks:
+      - gitea
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./runner_data:/data
+    environment:
+      - GITEA_INSTANCE_URL=http://gitea:3000
+      - GITEA_RUNNER_REGISTRATION_TOKEN=${GITEA_RUNNER_TOKEN}
+      - GITEA_RUNNER_NAME=docker-runner
+      - GITEA_RUNNER_LABELS=ubuntu-latest:docker://node:20-bullseye,ubuntu-22.04:docker://node:20-bullseye
+    restart: always
+    depends_on:
+      - server

@@ -1,0 +1,6 @@
+# Environment variables (contains sensitive tokens)
+.env
+
+# Gitea data
+gitea/
+runner_data/
