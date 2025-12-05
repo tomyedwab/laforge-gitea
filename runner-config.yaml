@@ -1,0 +1,26 @@
+log:
+  level: info
+
+runner:
+  file: .runner
+  capacity: 1
+  envs: {}
+  timeout: 3h
+
+cache:
+  enabled: true
+  dir: ""
+  host: ""
+  port: 0
+
+container:
+  # This is the key setting - ensures job containers use the gitea network
+  network: laforge-2_gitea
+  privileged: false
+  options: ""
+  workdir_parent: ""
+  valid_volumes: []
+  docker_host: ""
+
+host:
+  workdir_parent: ""

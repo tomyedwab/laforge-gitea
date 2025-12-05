@@ -30,11 +30,13 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./runner_data:/data
+      - ./runner-config.yaml:/config.yaml
     environment:
       - GITEA_INSTANCE_URL=http://gitea:3000
       - GITEA_RUNNER_REGISTRATION_TOKEN=${GITEA_RUNNER_TOKEN}
       - GITEA_RUNNER_NAME=docker-runner
       - GITEA_RUNNER_LABELS=ubuntu-latest:docker://node:20-bullseye,ubuntu-22.04:docker://node:20-bullseye
+      - CONFIG_FILE=/config.yaml
     restart: always
     depends_on:
       - server

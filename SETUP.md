@@ -50,6 +50,8 @@ The runner needs a registration token to connect to your Gitea instance.
 
 ## Step 4: Start the Runner
 
+The runner configuration includes `runner-config.yaml` which ensures that job containers spawned by the runner are placed on the `gitea` Docker network. This is critical - without it, job containers cannot resolve the `gitea:3000` hostname and will fail to clone repositories.
+
 Start the runner service:
 
 ```bash
@@ -62,7 +64,11 @@ Check the runner logs to ensure it connected successfully:
 docker logs -f gitea_runner
 ```
 
-You should see messages indicating the runner registered successfully.
+You should see messages indicating the runner registered successfully. If you need to restart the runner after making changes:
+
+```bash
+docker-compose restart gitea_runner
+```
 
 ## Step 5: Verify Runner Registration
 
@@ -149,6 +155,27 @@ docker-compose restart gitea_runner
 - Check Docker socket is accessible: `ls -la /var/run/docker.sock`
 - Verify the runner container can reach Gitea: `docker-compose logs gitea_runner`
 - Ensure the `GITEA_INSTANCE_URL` uses the internal Docker network address (`http://gitea:3000`)
+
+### Job Fails to Clone Repository
+
+If the workflow triggers but fails during the checkout step with network errors:
+
+1. **Check the network configuration**: Verify that `runner-config.yaml` exists and is mounted in the container
+2. **Verify the network name**: The config uses `laforge-2_gitea` (based on directory name). Check the actual network name:
+   ```bash
+   docker network ls | grep gitea
+   ```
+   If your network has a different name, update `runner-config.yaml` to match
+3. **Restart the runner** after any config changes:
+   ```bash
+   docker-compose restart gitea_runner
+   ```
+4. **Check job container network**: When a job runs, inspect which network it's on:
+   ```bash
+   docker ps  # Find the job container
+   docker inspect <container_id> | grep NetworkMode
+   ```
+   It should show `laforge-2_gitea` (or your network name)
 
 ## Customizing the Workflow
 

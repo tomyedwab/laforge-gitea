@@ -28,19 +28,3 @@ jobs:
           # Add your custom checks here
           # For example: file validation, naming conventions, etc.
           echo "All checks passed!"
-
-  # Example job that could be extended for actual testing
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Placeholder build step
-        run: |
-          echo "This is where you would run your build commands"
-          echo "Examples:"
-          echo "  - npm install && npm run build"
-          echo "  - python -m pytest"
-          echo "  - go test ./..."
-          echo "  - cargo build --release"
