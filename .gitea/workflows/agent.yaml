@@ -1,0 +1,49 @@
+name: Laforge agent
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - assigned
+    branches:
+      - main
+      - master
+  pull_request_review:
+    types:
+      - submitted
+      - edited
+  pull_request_review_comment:
+    types:
+      - created
+      - edited
+
+jobs:
+  agent:
+    if: contains(gitea.event.pull_request.requested_reviewers.*.login, 'laforge')
+    runs-on: laforge-2
+    container:
+      image: laforge-2:latest
+      env:
+        MODELNAME: claude-sonnet-4-5-20250929
+      volumes:
+        - laforge-2_claude-config:/home/laforge/.claude-laforge
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create pr.md
+        env:
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          GITEA_API_URL: ${{ gitea.api_url }}
+          GITEA_REPO_OWNER: ${{ gitea.repository_owner }}
+          GITEA_REPO_NAME: ${{ gitea.repository }}
+          PR_INDEX: ${{ gitea.event.pull_request.number }}
+        run: node .gitea/workflows/fetch-pr.js
+
+      - name: Run agent
+        run: |
+          echo "Running Claude agent..."
+          claude.sh
+          echo "Agent completed."

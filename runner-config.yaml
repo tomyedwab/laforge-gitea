@@ -6,6 +6,10 @@ runner:
   capacity: 1
   envs: {}
   timeout: 3h
+  labels:
+    - ubuntu-latest:docker://node:20-bullseye
+    - ubuntu-22.04:docker://node:20-bullseye
+    - laforge-2:docker://laforge-2:latest
 
 cache:
   enabled: true
@@ -19,7 +23,8 @@ container:
   privileged: false
   options: ""
   workdir_parent: ""
-  valid_volumes: []
+  valid_volumes:
+    - laforge-2_claude-config
   docker_host: ""
 
 host:
