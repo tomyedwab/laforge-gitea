@@ -45,6 +45,8 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             });
+            core.setOutput('number', context.issue.number);
+            core.setOutput('head_ref', pr.data.head.ref);
             return pr.data.requested_reviewers.map(r => r.login).includes('laforge');
 
       - name: Check reviewer condition and sender
@@ -73,13 +75,12 @@ jobs:
           GITEA_API_URL: ${{ gitea.api_url }}
           GITEA_REPO_OWNER: ${{ gitea.repository_owner }}
           GITEA_REPO_NAME: ${{ gitea.repository }}
-          PR_INDEX: ${{ gitea.event.pull_request.number }}
+          PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
         run: node .gitea/workflows/fetch-pr.js
 
       - name: Run agent
         if: steps.reviewer-check.conclusion == 'success'
         run: |
-          cat .pr/history.md
           echo "Running Claude agent..."
           claude.sh
           echo "Agent completed."
@@ -116,7 +117,7 @@ jobs:
 
           # Commit and push
           git commit -m "$COMMIT_MSG"
-          git push http://laforge:${GITEA_TOKEN}@${GIT_BASE_URL#http://}/${{ gitea.repository }}.git HEAD:${{ gitea.event.pull_request.head.ref }}
+          git push http://laforge:${GITEA_TOKEN}@${GIT_BASE_URL#http://}/${{ gitea.repository }}.git HEAD:${{ github.event_name == 'issue_comment' && steps.pr.outputs.head_ref || github.event.pull_request.head.ref }}
 
       - name: Post status to PR
         if: steps.reviewer-check.conclusion == 'success'
@@ -125,5 +126,5 @@ jobs:
           GITEA_API_URL: ${{ gitea.api_url }}
           GITEA_REPO_OWNER: ${{ gitea.repository_owner }}
           GITEA_REPO_NAME: ${{ gitea.repository }}
-          PR_INDEX: ${{ gitea.event.pull_request.number }}
+          PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
         run: node .gitea/workflows/post-status.js
