@@ -92,13 +92,8 @@ jobs:
         run: |
           cat .pr/history.md
           echo "Running Claude agent..."
-          echo claude.sh
+          claude.sh
           echo "Agent completed."
-          echo "Creating example status and commit files for testing..."
-          echo "# Test Status" > .pr/status.md
-          echo "This is a test status message to verify the workflow works correctly." >> .pr/status.md
-          echo "Test commit message" > .pr/commit.md
-          echo "TEST! This is a test artifact" > .pr/artifact.md
 
       - name: Commit and push changes
         if: steps.check_author.outputs.skip != 'true'
