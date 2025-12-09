@@ -61,13 +61,13 @@ jobs:
           fetch-depth: 2
           ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || github.ref }}
 
-      - name: Check if last commit is from laforge
+      - name: Check if event was triggered by laforge
         if: steps.reviewer-check.conclusion == 'success'
         id: check_author
         run: |
-          LAST_AUTHOR=$(git log -1 --format='%an' || echo "")
-          if [ "$LAST_AUTHOR" = "Laforge agent" ]; then
-            echo "Last commit was from laforge, skipping workflow"
+          SENDER="${{ github.event.sender.login }}"
+          if [ "$SENDER" = "laforge" ]; then
+            echo "Event was triggered by laforge user, skipping workflow"
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "skip=false" >> $GITHUB_OUTPUT
