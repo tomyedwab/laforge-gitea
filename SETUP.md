@@ -86,7 +86,49 @@ Actions must be enabled per repository:
 4. Check the box for **"Enable Repository Actions"**
 5. Click **Save**
 
-## Step 7: Push the Workflow Files
+## Step 7: Set Up Laforge User and Token
+
+The agent workflow requires a "laforge" user account and personal access token to post status updates and commit changes to pull requests.
+
+### Create the Laforge User
+
+1. In Gitea, create a new user account named "laforge":
+   - Go to Site Administration → User Accounts
+   - Click **Create User Account**
+   - Username: `laforge`
+   - Email: `laforge@tomyedwab.com` (or your domain)
+   - Password: (choose a secure password)
+   - Click **Create User Account**
+
+2. Add the laforge user as a collaborator to your repository:
+   - Go to your repository → Settings → Collaborators
+   - Add `laforge` with **Write** permissions
+
+### Create Personal Access Token
+
+1. Log in as the `laforge` user
+2. Go to Settings → Applications → Generate New Token
+3. Token Name: `Agent Workflow Token`
+4. Select scopes:
+   - `repo` (Full control of repositories)
+   - `write:repository` (Read and write access)
+5. Click **Generate Token**
+6. **Copy the token** - you won't be able to see it again
+
+### Add Repository Secret
+
+1. Log out of the laforge account and log back in as your admin user
+2. Go to your repository → Settings → Secrets
+3. Click **Add Secret**
+4. Name: `LAFORGE_TOKEN`
+5. Value: (paste the personal access token you copied)
+6. Click **Add Secret**
+
+This token allows the workflow to:
+- Post status updates as the "laforge" user (instead of "gitea-actions[bot]")
+- Commit and push changes to pull request branches
+
+## Step 8: Push the Workflow Files
 
 The workflow files are already created in `.gitea/workflows/`. You need to commit and push them to your Gitea repository:
 
@@ -108,7 +150,7 @@ git commit -m "Add Gitea Actions configuration"
 git push -u origin main  # or 'master' depending on your default branch
 ```
 
-## Step 8: Test with a Pull Request
+## Step 9: Test with a Pull Request
 
 1. Create a new branch:
    ```bash

@@ -119,7 +119,7 @@ async function main() {
     }
   });
 
-  fs.writeFileSync("pr.md", text);
+  fs.writeFileSync(".pr/history.md", text);
 }
 
 main();

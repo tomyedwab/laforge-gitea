@@ -1,7 +1,7 @@
 FROM debian:bookworm-slim
 
 # Install packages and clean up temporary files
-RUN apt update && apt install -y curl zip sqlite3 curl && apt clean && rm -rf /var/lib/apt/lists/*
+RUN apt update && apt install -y curl zip sqlite3 curl git && apt clean && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user and group
 RUN adduser --disabled-password --gecos "" laforge
