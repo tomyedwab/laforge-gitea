@@ -47,11 +47,12 @@ jobs:
             });
             return pr.data.requested_reviewers.map(r => r.login).includes('laforge');
 
-      - name: Check reviewer condition
+      - name: Check reviewer condition and sender
         id: reviewer-check
         if: |
-          (github.event_name == 'pull_request' && contains(github.event.pull_request.requested_reviewers.*.login, 'laforge')) ||
-          (github.event_name == 'issue_comment' && steps.pr.outputs.result == 'true')
+          (github.event.sender.login != 'laforge') &&
+          ((github.event_name == 'pull_request' && contains(github.event.pull_request.requested_reviewers.*.login, 'laforge')) ||
+          (github.event_name == 'issue_comment' && steps.pr.outputs.result == 'true'))
         run: echo "Condition met, proceeding..."
 
       - name: Checkout code
@@ -61,24 +62,12 @@ jobs:
           fetch-depth: 2
           ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || github.ref }}
 
-      - name: Check if event was triggered by laforge
-        if: steps.reviewer-check.conclusion == 'success'
-        id: check_author
-        run: |
-          SENDER="${{ github.event.sender.login }}"
-          if [ "$SENDER" = "laforge" ]; then
-            echo "Event was triggered by laforge user, skipping workflow"
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Init .pr directory
-        if: steps.check_author.outputs.skip != 'true'
+        if: steps.reviewer-check.conclusion == 'success'
         run: mkdir -p .pr
 
       - name: Create .pr/history.md
-        if: steps.check_author.outputs.skip != 'true'
+        if: steps.reviewer-check.conclusion == 'success'
         env:
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
           GITEA_API_URL: ${{ gitea.api_url }}
@@ -88,7 +77,7 @@ jobs:
         run: node .gitea/workflows/fetch-pr.js
 
       - name: Run agent
-        if: steps.check_author.outputs.skip != 'true'
+        if: steps.reviewer-check.conclusion == 'success'
         run: |
           cat .pr/history.md
           echo "Running Claude agent..."
@@ -96,7 +85,7 @@ jobs:
           echo "Agent completed."
 
       - name: Commit and push changes
-        if: steps.check_author.outputs.skip != 'true'
+        if: steps.reviewer-check.conclusion == 'success'
         env:
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
           GITEA_API_URL: ${{ gitea.api_url }}
@@ -130,7 +119,7 @@ jobs:
           git push http://laforge:${GITEA_TOKEN}@${GIT_BASE_URL#http://}/${{ gitea.repository }}.git HEAD:${{ gitea.event.pull_request.head.ref }}
 
       - name: Post status to PR
-        if: steps.check_author.outputs.skip != 'true'
+        if: steps.reviewer-check.conclusion == 'success'
         env:
           GITEA_TOKEN: ${{ secrets.LAFORGE_TOKEN }}
           GITEA_API_URL: ${{ gitea.api_url }}
