@@ -138,7 +138,6 @@ jobs:
       - name: Send NTFY notification
         if: steps.assignee-check.conclusion == 'success'
         env:
-          NTFY_HOST: http://ntfy:3031
           PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
         run: |
-          curl -H "Title: Laforge run complete: PR ${PR_INDEX}" -d "See the PR for details." ${NTFY_HOST}/laforge
+          curl -H "Title: Laforge run complete: PR ${PR_INDEX}" -d "See the PR for details." http://ntfy/laforge
