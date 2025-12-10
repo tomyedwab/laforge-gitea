@@ -84,6 +84,10 @@ function deleteGiteaAPI(path, body) {
   return makeApiRequest(path, "DELETE", body);
 }
 
+function patchGiteaAPI(path, body) {
+  return makeApiRequest(path, "PATCH", body);
+}
+
 function getGiteaAPI(path) {
   return makeApiRequest(path, "GET", null);
 }
@@ -192,12 +196,9 @@ async function main() {
   // Handle unassign if requested
   if (statusData.unassign) {
     try {
-      await deleteGiteaAPI(
-        `/repos/${owner}/${repo}/issues/${prIndex}/assignees`,
-        {
-          assignees: ["laforge"],
-        },
-      );
+      await patchGiteaAPI(`/repos/${owner}/${repo}/issues/${prIndex}`, {
+        assignees: [],
+      });
       console.log("Unassigned laforge from PR");
     } catch (error) {
       console.error("Failed to unassign laforge:", error.message);
