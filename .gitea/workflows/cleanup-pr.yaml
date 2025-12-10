@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'PR number to clean up'
+        description: "PR number to clean up"
         required: true
         type: number
 
@@ -42,6 +42,20 @@ jobs:
             echo "✓ .pr directory does not exist"
           fi
 
+      - name: Unassign laforge from PR
+        if: steps.pr.outputs.has_laforge == 'true'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITEA_TOKEN }}
+          script: |
+            await github.rest.issues.removeAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ inputs.pr_number }},
+              assignees: ['laforge']
+            });
+            console.log('✓ Unassigned laforge from PR');
+
       - name: Commit changes
         env:
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
@@ -65,20 +79,6 @@ jobs:
           else
             echo "✓ No changes to commit"
           fi
-
-      - name: Unassign laforge from PR
-        if: steps.pr.outputs.has_laforge == 'true'
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITEA_TOKEN }}
-          script: |
-            await github.rest.issues.removeAssignees({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ inputs.pr_number }},
-              assignees: ['laforge']
-            });
-            console.log('✓ Unassigned laforge from PR');
 
       - name: Post cleanup comment
         uses: actions/github-script@v6
