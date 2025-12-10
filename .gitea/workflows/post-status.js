@@ -4,7 +4,7 @@
  * This script reads .pr/status.yaml and:
  * - Posts the 'status' field as a PR comment
  * - Posts any 'file_comments' as line comments on specific files
- * - Unassigns laforge as reviewer if 'unassign' is true
+ * - Unassigns laforge as assignee if 'unassign' is true
  *
  * Falls back to .pr/status.md for backwards compatibility.
  *
@@ -193,9 +193,9 @@ async function main() {
   if (statusData.unassign) {
     try {
       await deleteGiteaAPI(
-        `/repos/${owner}/${repo}/pulls/${prIndex}/requested_reviewers`,
+        `/repos/${owner}/${repo}/issues/${prIndex}/assignees`,
         {
-          reviewers: ["laforge"],
+          assignees: ["laforge"],
         },
       );
       console.log("Unassigned laforge from PR");
