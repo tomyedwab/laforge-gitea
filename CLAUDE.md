@@ -36,9 +36,15 @@ implementing anything. There is a specific mechanism for doing this: when you
 have something for the PR author to review, write it to the `.pr/status.yaml` file
 in the workspace and stop work immediately.
 
+Documents to be reviewed should be written in Markdown, and feel free to include
+inline MermaidJS diagrams. You can also generate screenshots and reference those
+in your status message as well.
+
 Once the PR author responds you will see the discussion in `.pr/history.md`.
 
 You are encouraged to write a `.pr/status.yaml` anytime you complete work.
+Include links to files when appropriate using normal Markdown links referencing
+the PR branch (as defined in `.pr/history.md`).
 
 Any changes in the workspace are committed for you automatically once you finish
 your work: To describe the changes, please write a `.pr/commit.md` file if any
@@ -50,7 +56,7 @@ A `status.yaml` file might look like this:
 status: |
   Before I make changes to the login page, here is a technical design document
   with the proposed amendments applied:
-  [Login page design](.pr/login_page_design.md)
+  [Login page design](/src/branch/login-redesign/.pr/login_page_design.md)
   If approved, I will implement the proposed changes.
 ```
 
@@ -65,6 +71,11 @@ file_comments:
     line: 23
     comment: |
       Should this endpoint require admin authentication or just regular user auth?
+  - file: client/components/ProgressBar.tsx
+    line: 40
+    comment: |
+      Here is what the ProgressBar looks like in the fixture test:
+      ![ProgressBar fixture](/raw/branch/login-redesign/.pr/progress-fixture.png)
 
 unassign: false  # Set to true to remove yourself as a reviewer
 ```

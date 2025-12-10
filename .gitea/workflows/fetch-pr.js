@@ -93,6 +93,7 @@ async function main() {
   // Format as markdown
   let text = `# PR #${prIndex}: ${pr.title}\n\n`;
   text += `**Author:** ${pr.user.login}\n`;
+  text += "**Branch:** ${pr.head.ref}\n";
   text += `**Created:** ${pr.created_at}\n\n`;
   text += `## PR Description\n${pr.body}\n\n`;
 
