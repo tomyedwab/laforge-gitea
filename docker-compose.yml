@@ -47,6 +47,8 @@ services:
   ntfy:
     image: binwiederhier/ntfy:latest
     container_name: ntfy
+    networks:
+      - gitea
     command:
       - serve
     environment:

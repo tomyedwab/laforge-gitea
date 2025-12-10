@@ -25,7 +25,3 @@ else
 fi
 
 rm .claude/settings.local.json
-
-if [ "$NTFY_HOST" != "" ]; then
-    curl -H "Title: Laforge run complete: PR $PR_INDEX" -d "See the PR for details." $NTFY_HOST/laforge
-fi
