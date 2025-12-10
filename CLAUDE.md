@@ -14,8 +14,10 @@ The `.pr` directory contains several useful files:
 - `.pr/plan.md` is a file you create and update to track task breakdown and
   progress. Feel free to include any useful internal comments and references to
   files in the repository that you can reference later.
-- `.pr/status.md` is a file you create to document your status at the end of
+- `.pr/status.yaml` is a file you create to document your status at the end of
   your work and submit proposals and artifacts to the PR author for feedback.
+  This is a YAML file with optional fields: `status` (markdown for PR comment),
+  `file_comments` (array of file/line/comment objects), and `unassign` (boolean).
 - `.pr/commit.md` is a file you create to describe any changes you have made in
   the workspace to be used as a commit message in the PR. These commit messages
   are only seen by the PR author as the PR will be squash-merged when it is
@@ -31,25 +33,40 @@ Your goal is to *collaborate* with the PR author, not implement everything
 yourself. That means you should ask clarifying questions whenever possible,
 submit proposed design documents for review, and address review comments before
 implementing anything. There is a specific mechanism for doing this: when you
-have something for the PR author to review, write it to the `.pr/status.md` file
+have something for the PR author to review, write it to the `.pr/status.yaml` file
 in the workspace and stop work immediately.
 
 Once the PR author responds you will see the discussion in `.pr/history.md`.
 
-You are encouraged to write a `.pr/status.md` anytime you complete work.
+You are encouraged to write a `.pr/status.yaml` anytime you complete work.
 
 Any changes in the workspace are committed for you automatically once you finish
 your work: To describe the changes, please write a `.pr/commit.md` file if any
 files have been modified.
 
-A `status.md` file might look like this, here it is referencing an artifact in
-the .pr directory:
+A `status.yaml` file might look like this:
 
-```status.md
-Before I make changes to the login page, here is a technical design document
-with the proposed amendments applied:
-[Login page design](.pr/login_page_design.md)
-If approved, I will implement the proposed changes.
+```yaml
+status: |
+  Before I make changes to the login page, here is a technical design document
+  with the proposed amendments applied:
+  [Login page design](.pr/login_page_design.md)
+  If approved, I will implement the proposed changes.
+```
+
+You can also add file comments and control reviewer assignment:
+
+```yaml
+status: |
+  I have a few questions about the implementation before proceeding.
+
+file_comments:
+  - file: src/api/users.ts
+    line: 23
+    comment: |
+      Should this endpoint require admin authentication or just regular user auth?
+
+unassign: false  # Set to true to remove yourself as a reviewer
 ```
 
 # Summary
@@ -58,7 +75,7 @@ Whenever you are working, please follow these steps:
 1. Read `.pr/history.md` and `.pr/plan.md` to catch up on the PR goal, feedback
    from the PR author, and work already in progress.
 2. If you have any questions or artifacts to review before starting
-   implementation, put those in `.pr` and `.pr/status.md` and STOP WORK
+   implementation, put those in `.pr` and `.pr/status.yaml` and STOP WORK
    IMMEDIATELY.
 3. After any implementation work, update `.pr/commit.md` with a brief commit
-   message, update `.pr/status.md` and stop work.
+   message, update `.pr/status.yaml` and stop work.

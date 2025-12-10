@@ -1,0 +1,9 @@
+{
+  "name": "laforge-workflows",
+  "version": "1.0.0",
+  "description": "Dependencies for Laforge workflows",
+  "private": true,
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

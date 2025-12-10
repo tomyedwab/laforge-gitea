@@ -97,7 +97,7 @@ jobs:
 
           # Stage all changes except special files
           git add .
-          git reset HEAD .pr/history.md .pr/status.md .pr/commit.md 2>/dev/null || true
+          git reset HEAD .pr/history.md .pr/status.yaml .pr/status.md .pr/commit.md 2>/dev/null || true
 
           # Check if there are changes to commit
           if git diff --cached --quiet; then
@@ -118,6 +118,12 @@ jobs:
           # Commit and push
           git commit -m "$COMMIT_MSG"
           git push http://laforge:${GITEA_TOKEN}@${GIT_BASE_URL#http://}/${{ gitea.repository }}.git HEAD:${{ github.event_name == 'issue_comment' && steps.pr.outputs.head_ref || github.event.pull_request.head.ref }}
+
+      - name: Install workflow dependencies
+        if: steps.reviewer-check.conclusion == 'success'
+        run: |
+          cd .gitea/workflows
+          npm install
 
       - name: Post status to PR
         if: steps.reviewer-check.conclusion == 'success'
