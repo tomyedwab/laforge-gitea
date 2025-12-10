@@ -80,6 +80,9 @@ jobs:
 
       - name: Run agent
         if: steps.assignee-check.conclusion == 'success'
+        env:
+          NTFY_HOST: http://ntfy:3031
+          PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
         run: |
           echo "Running Claude agent..."
           claude.sh
