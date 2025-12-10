@@ -1,0 +1,38 @@
+name: Check PR Directory
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - main
+      - master
+
+jobs:
+  check-pr-directory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for .pr directory files
+        run: |
+          if [ -d ".pr" ]; then
+            # Count files in .pr directory (excluding . and ..)
+            FILE_COUNT=$(find .pr -type f | wc -l)
+
+            if [ "$FILE_COUNT" -gt 0 ]; then
+              echo "ERROR: .pr directory contains files that must be removed before merging"
+              echo "Found files:"
+              find .pr -type f
+              echo ""
+              echo "Please run the 'Cleanup PR Directory' workflow to remove these files"
+              exit 1
+            else
+              echo "✓ .pr directory is empty or does not exist"
+            fi
+          else
+            echo "✓ .pr directory does not exist"
+          fi

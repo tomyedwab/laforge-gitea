@@ -1,0 +1,94 @@
+name: Cleanup PR Directory
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to clean up'
+        required: true
+        type: number
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ inputs.pr_number }}/head
+          fetch-depth: 1
+
+      - name: Get PR details
+        id: pr
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: ${{ inputs.pr_number }}
+            });
+            core.setOutput('head_ref', pr.data.head.ref);
+            core.setOutput('has_laforge', pr.data.assignees.map(a => a.login).includes('laforge'));
+            return pr.data;
+
+      - name: Remove .pr directory
+        run: |
+          if [ -d ".pr" ]; then
+            echo "Removing .pr directory..."
+            rm -rf .pr
+            echo "✓ .pr directory removed"
+          else
+            echo "✓ .pr directory does not exist"
+          fi
+
+      - name: Commit changes
+        env:
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          GITEA_API_URL: ${{ gitea.api_url }}
+        run: |
+          git config user.name "Laforge agent"
+          git config user.email "laforge@tomyedwab.com"
+
+          # Check if .pr directory was deleted
+          if git diff --name-only | grep -q "^.pr/"; then
+            git add .pr
+            git commit -m "Clean up .pr directory for merge"
+
+            # Derive base git URL from API URL
+            GIT_BASE_URL=$(echo "$GITEA_API_URL" | sed 's|/api/v1.*$||')
+
+            # Push changes
+            git push http://laforge:${GITEA_TOKEN}@${GIT_BASE_URL#http://}/${{ gitea.repository }}.git HEAD:${{ steps.pr.outputs.head_ref }}
+
+            echo "✓ Changes committed and pushed"
+          else
+            echo "✓ No changes to commit"
+          fi
+
+      - name: Unassign laforge from PR
+        if: steps.pr.outputs.has_laforge == 'true'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITEA_TOKEN }}
+          script: |
+            await github.rest.issues.removeAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ inputs.pr_number }},
+              assignees: ['laforge']
+            });
+            console.log('✓ Unassigned laforge from PR');
+
+      - name: Post cleanup comment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITEA_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ inputs.pr_number }},
+              body: '🧹 Cleaned up `.pr` directory and unassigned laforge. This PR is now ready for merge.'
+            });
+            console.log('✓ Posted cleanup comment');
