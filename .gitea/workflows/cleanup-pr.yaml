@@ -44,17 +44,17 @@ jobs:
 
       - name: Unassign laforge from PR
         if: steps.pr.outputs.has_laforge == 'true'
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITEA_TOKEN }}
-          script: |
-            await github.rest.issues.removeAssignees({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ inputs.pr_number }},
-              assignees: ['laforge']
-            });
-            console.log('✓ Unassigned laforge from PR');
+        env:
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          GITEA_API_URL: ${{ gitea.api_url }}
+        run: |
+          # Use PATCH to update assignees list (Gitea API compatible)
+          curl -X PATCH \
+            -H "Authorization: token ${GITEA_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"assignees":[]}' \
+            "${GITEA_API_URL}/repos/${{ gitea.repository }}/issues/${{ inputs.pr_number }}"
+          echo "✓ Unassigned laforge from PR"
 
       - name: Commit changes
         env:
