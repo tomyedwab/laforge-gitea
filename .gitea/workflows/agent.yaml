@@ -79,11 +79,28 @@ jobs:
         run: node .gitea/workflows/fetch-pr.js
 
       - name: Run agent
+        id: run-agent
         if: steps.assignee-check.conclusion == 'success'
         run: |
           echo "Running Claude agent..."
           claude.sh
           echo "Agent completed."
+
+      - name: Notify agent execution failure
+        if: failure() && steps.assignee-check.conclusion == 'success'
+        env:
+          PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
+          GITEA_API_URL: ${{ gitea.api_url }}
+          RUN_ID: ${{ github.run_number }}
+        run: |
+          # Derive base URL from API URL (remove /api/v1 suffix)
+          BASE_URL=$(echo "$GITEA_API_URL" | sed 's|/api/v1.*$||')
+          ACTION_URL="${BASE_URL}/${{ gitea.repository }}/actions/runs/${RUN_ID}"
+          curl -H "Title: ERROR - Laforge Agent Failed: PR ${PR_INDEX}" \
+               -H "Click: ${ACTION_URL}" \
+               -H "Priority: high" \
+               -d "Agent execution failed. Check workflow logs." \
+               http://ntfy/laforge
 
       - name: Commit and push changes
         if: steps.assignee-check.conclusion == 'success'
@@ -126,6 +143,7 @@ jobs:
           npm install
 
       - name: Post status to PR
+        id: post-status
         if: steps.assignee-check.conclusion == 'success'
         env:
           GITEA_TOKEN: ${{ secrets.LAFORGE_TOKEN }}
@@ -135,11 +153,36 @@ jobs:
           PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
         run: node .gitea/workflows/post-status.js
 
+      - name: Notify status posting failure
+        if: failure() && steps.assignee-check.conclusion == 'success'
+        env:
+          PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
+          GITEA_API_URL: ${{ gitea.api_url }}
+          RUN_ID: ${{ github.run_number }}
+        run: |
+          # Derive base URL from API URL (remove /api/v1 suffix)
+          BASE_URL=$(echo "$GITEA_API_URL" | sed 's|/api/v1.*$||')
+          ACTION_URL="${BASE_URL}/${{ gitea.repository }}/actions/runs/${RUN_ID}"
+          curl -H "Title: ERROR - Laforge Status Failed: PR ${PR_INDEX}" \
+               -H "Click: ${ACTION_URL}" \
+               -H "Priority: high" \
+               -d "Failed to post status to PR. Check workflow logs." \
+               http://ntfy/laforge
+
       - name: Send NTFY notification
-        if: steps.assignee-check.conclusion == 'success'
+        if: success() && steps.assignee-check.conclusion == 'success'
         env:
           GITEA_API_URL: ${{ gitea.api_url }}
           PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
+        run: |
+          curl -H "Title: Laforge run complete: PR ${PR_INDEX}" -d "See the PR for details." http://ntfy/laforge
+
+      - name: Notify workflow failure
+        if: failure() && steps.assignee-check.conclusion == 'success'
+        env:
+          PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
+          GITEA_API_URL: ${{ gitea.api_url }}
+          RUN_ID: ${{ github.run_number }}
         run: |
           # Derive web URL from API URL
           WEB_URL=$(echo "$GITEA_API_URL" | sed 's|/api/v1.*$||')
