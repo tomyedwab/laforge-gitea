@@ -101,6 +101,13 @@ async function main() {
   const repo = fullRepo.split("/").pop(); // Extract just the repo name
   const prIndex = process.env.PR_INDEX;
 
+  // Get PR data to retrieve the commit SHA
+  const prData = await getGiteaAPI(
+    `/repos/${owner}/${repo}/pulls/${prIndex}`,
+  );
+  const headSha = prData.head.sha;
+  console.log(`PR HEAD commit SHA: ${headSha}`);
+
   let statusData = null;
   let usingYaml = false;
 
@@ -134,6 +141,17 @@ async function main() {
     return;
   }
 
+  // Replace {{COMMIT_SHA}} placeholder in status and file comments
+  if (statusData.status) {
+    statusData.status = statusData.status.replace(/\{\{COMMIT_SHA\}\}/g, headSha);
+  }
+  if (statusData.file_comments) {
+    statusData.file_comments = statusData.file_comments.map((fc) => ({
+      ...fc,
+      comment: fc.comment ? fc.comment.replace(/\{\{COMMIT_SHA\}\}/g, headSha) : fc.comment,
+    }));
+  }
+
   // Post status comment if present
   if (statusData.status) {
     await postGiteaAPI(`/repos/${owner}/${repo}/issues/${prIndex}/comments`, {
@@ -158,12 +176,6 @@ async function main() {
       }
 
       try {
-        // Get the PR diff to find the correct position for the line comment
-        const prData = await getGiteaAPI(
-          `/repos/${owner}/${repo}/pulls/${prIndex}`,
-        );
-        const headSha = prData.head.sha;
-
         // Post as a review comment on the specific line
         // Note: Gitea uses 'new_position' for line numbers in the diff
         await postGiteaAPI(
