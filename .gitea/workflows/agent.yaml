@@ -4,7 +4,6 @@ on:
   pull_request:
     types:
       - opened
-      - synchronize
       - reopened
       - assigned
     branches:
@@ -175,7 +174,13 @@ jobs:
           GITEA_API_URL: ${{ gitea.api_url }}
           PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
         run: |
-          curl -H "Title: Laforge run complete: PR ${PR_INDEX}" -d "See the PR for details." http://ntfy/laforge
+          # Derive web URL from API URL
+          WEB_URL=$(echo "$GITEA_API_URL" | sed 's|/api/v1.*$||')
+          curl -H "Title: Laforge run complete: PR ${PR_INDEX}" \
+               -H "Click: ${WEB_URL}/${{ gitea.repository }}/pulls/${PR_INDEX}" \
+               -H "Tags: white_check_mark" \
+               -d "Click to view PR ${PR_INDEX}" \
+               http://ntfy/laforge
 
       - name: Notify workflow failure
         if: failure() && steps.assignee-check.conclusion == 'success'
@@ -186,9 +191,8 @@ jobs:
         run: |
           # Derive web URL from API URL
           WEB_URL=$(echo "$GITEA_API_URL" | sed 's|/api/v1.*$||')
-
-          curl -H "Title: Laforge run complete: PR ${PR_INDEX}" \
+          curl -H "Title: ERROR - Laforge Agent Failed: PR ${PR_INDEX}" \
                -H "Click: ${WEB_URL}/${{ gitea.repository }}/pulls/${PR_INDEX}" \
-               -H "Tags: white_check_mark" \
-               -d "Click to view PR ${PR_INDEX}" \
+               -H "Priority: high" \
+               -d "Workflow failed. Check logs." \
                http://ntfy/laforge
