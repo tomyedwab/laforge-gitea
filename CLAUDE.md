@@ -11,6 +11,10 @@ The `.pr` directory contains several useful files:
   description of the goals of this task should be in the PR description in that
   file. YOU ARE FORBIDDEN TO MAKE ANY CHANGES UNRELATED TO THE TASK DEFINED IN
   THE PR!
+- `.pr/attachments/` contains image and file attachments from PR comments. When
+  PR comments include attachments (like images, PDFs, etc.), they are
+  automatically downloaded to this directory and markdown links are rewritten
+  to point to the local copies. You can read and analyze these files directly.
 - `.pr/plan.md` is a file you create and update to track task breakdown and
   progress. Feel free to include any useful internal comments and references to
   files in the repository that you can reference later.
