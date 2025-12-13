@@ -84,6 +84,8 @@ jobs:
           GITEA_REPO_OWNER: ${{ gitea.repository_owner }}
           GITEA_REPO_NAME: ${{ gitea.repository }}
           PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
+          # Only pass COMMENT_ID for issue_comment events - this ensures /critique only affects the triggering run
+          COMMENT_ID: ${{ github.event_name == 'issue_comment' && github.event.comment.id || '' }}
         run: node .gitea/workflows/parse-agent-command.js
 
       - name: Run agent

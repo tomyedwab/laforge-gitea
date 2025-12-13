@@ -6,11 +6,14 @@
  * - `/critique <name>` - Triggers one-time review run without changing primary agent
  *
  * The script:
- * 1. Fetches the latest PR comment
- * 2. Parses for agent commands
+ * 1. If COMMENT_ID is provided, fetches and parses only that specific comment
+ * 2. If no COMMENT_ID, uses the primary agent from config (no comment parsing)
  * 3. Validates agent names against registry
  * 4. Updates or reads `.pr/agent-config.json` for state management
  * 5. Outputs environment variables for the workflow to consume
+ *
+ * This ensures /critique commands only affect the single run they trigger,
+ * while /agent commands persist across runs.
  *
  * Required environment variables:
  * - GITEA_TOKEN: API token for authentication
@@ -18,6 +21,9 @@
  * - GITEA_REPO_OWNER: Repository owner
  * - GITEA_REPO_NAME: Repository name
  * - PR_INDEX: Pull request number
+ *
+ * Optional environment variables:
+ * - COMMENT_ID: If provided, only parse this specific comment (for issue_comment events)
  */
 
 const http = require("http");
@@ -135,8 +141,14 @@ async function main() {
   const fullRepo = process.env.GITEA_REPO_NAME;
   const repo = fullRepo.split("/").pop();
   const prIndex = process.env.PR_INDEX;
+  const commentId = process.env.COMMENT_ID;
 
   console.log(`Parsing agent command for PR #${prIndex}...`);
+  if (commentId) {
+    console.log(`Processing specific comment ID: ${commentId}`);
+  } else {
+    console.log(`No COMMENT_ID provided, using primary agent from config`);
+  }
 
   // Read current agent config
   const config = readAgentConfig();
@@ -147,15 +159,15 @@ async function main() {
   let agentName = config.primary_agent;
   let modelId = AGENT_REGISTRY[agentName] || AGENT_REGISTRY[DEFAULT_AGENT];
 
-  try {
-    // Fetch the latest comments to check for agent commands
-    const comments = await fetchGiteaAPI(
-      `/repos/${owner}/${repo}/issues/${prIndex}/comments`,
-    );
+  // Only parse comments if COMMENT_ID is provided (issue_comment event)
+  // For other events (PR open/reopen), use the primary agent from config
+  if (commentId) {
+    try {
+      // Fetch the specific comment that triggered this workflow
+      const comment = await fetchGiteaAPI(
+        `/repos/${owner}/${repo}/issues/comments/${commentId}`,
+      );
 
-    // Process comments in reverse order (newest first) to find the latest command
-    for (let i = comments.length - 1; i >= 0; i--) {
-      const comment = comments[i];
       const command = parseAgentCommand(comment.body);
 
       if (command) {
@@ -167,35 +179,31 @@ async function main() {
           console.log(
             `ERROR: Invalid agent name '${command.agent}'. Valid options: ${validAgents}`,
           );
-
-          // Set outputs to use default agent and continue
-          agentName = config.primary_agent;
+          // Use primary agent from config on invalid command
+        } else {
+          // Set agent based on command type
+          agentName = command.agent;
           modelId = AGENT_REGISTRY[agentName];
-          break;
+
+          if (command.type === "agent") {
+            // Update config for primary agent switch
+            agentMode = "primary";
+            config.primary_agent = agentName;
+            config.last_updated = new Date().toISOString();
+            config.updated_by = comment.user.login;
+            writeAgentConfig(config);
+          } else if (command.type === "critique") {
+            // One-time critique mode (don't update config)
+            agentMode = "critique";
+          }
         }
-
-        // Set agent based on command type
-        agentName = command.agent;
-        modelId = AGENT_REGISTRY[agentName];
-
-        if (command.type === "agent") {
-          // Update config for primary agent switch
-          agentMode = "primary";
-          config.primary_agent = agentName;
-          config.last_updated = new Date().toISOString();
-          config.updated_by = comment.user.login;
-          writeAgentConfig(config);
-        } else if (command.type === "critique") {
-          // One-time critique mode (don't update config)
-          agentMode = "critique";
-        }
-
-        break; // Use the most recent command
+      } else {
+        console.log(`No agent command found in comment, using primary agent`);
       }
+    } catch (error) {
+      console.log(`Error fetching comment: ${error.message}`);
+      console.log("Using current primary agent from config");
     }
-  } catch (error) {
-    console.log(`Error fetching comments: ${error.message}`);
-    console.log("Using current primary agent from config");
   }
 
   // Set outputs for workflow
