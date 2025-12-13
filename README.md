@@ -210,6 +210,12 @@ Required secrets in Gitea:
 - `LAFORGE_TOKEN` - Personal access token for the laforge user
 - `GITEA_TOKEN` - General Gitea API token (optional)
 
+### Repository Variables
+
+Required variables in Gitea:
+
+- `EXTERNAL_BASE_URL` - Your external Gitea URL (e.g., `https://gitea.example.com`). Used for clickable links in NTFY notifications. Do not include a trailing slash.
+
 ### Claude Configuration
 
 The agent uses Claude Sonnet 4.5. Configuration is handled in the Docker container and workflow.

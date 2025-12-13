@@ -98,15 +98,18 @@ jobs:
           echo "Agent completed."
 
       - name: Notify agent execution failure
-        if: failure() && steps.assignee-check.conclusion == 'success'
+        if: failure() && steps.run-agent.conclusion == 'failure'
         env:
           PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
-          GITEA_API_URL: ${{ gitea.api_url }}
+          EXTERNAL_BASE_URL: ${{ vars.EXTERNAL_BASE_URL }}
           RUN_ID: ${{ github.run_number }}
         run: |
-          # Derive base URL from API URL (remove /api/v1 suffix)
-          BASE_URL=$(echo "$GITEA_API_URL" | sed 's|/api/v1.*$||')
-          ACTION_URL="${BASE_URL}/${{ gitea.repository }}/actions/runs/${RUN_ID}"
+          # Ensure EXTERNAL_BASE_URL is set
+          if [ -z "$EXTERNAL_BASE_URL" ]; then
+            echo "ERROR: EXTERNAL_BASE_URL repository variable is not set"
+            exit 1
+          fi
+          ACTION_URL="${EXTERNAL_BASE_URL}/${{ gitea.repository }}/actions/runs/${RUN_ID}"
           curl -H "Title: ERROR - Laforge Agent Failed: PR ${PR_INDEX}" \
                -H "Click: ${ACTION_URL}" \
                -H "Priority: high" \
@@ -165,15 +168,18 @@ jobs:
         run: node .gitea/workflows/post-status.js
 
       - name: Notify status posting failure
-        if: failure() && steps.assignee-check.conclusion == 'success'
+        if: failure() && steps.post-status.conclusion == 'failure'
         env:
           PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
-          GITEA_API_URL: ${{ gitea.api_url }}
+          EXTERNAL_BASE_URL: ${{ vars.EXTERNAL_BASE_URL }}
           RUN_ID: ${{ github.run_number }}
         run: |
-          # Derive base URL from API URL (remove /api/v1 suffix)
-          BASE_URL=$(echo "$GITEA_API_URL" | sed 's|/api/v1.*$||')
-          ACTION_URL="${BASE_URL}/${{ gitea.repository }}/actions/runs/${RUN_ID}"
+          # Ensure EXTERNAL_BASE_URL is set
+          if [ -z "$EXTERNAL_BASE_URL" ]; then
+            echo "ERROR: EXTERNAL_BASE_URL repository variable is not set"
+            exit 1
+          fi
+          ACTION_URL="${EXTERNAL_BASE_URL}/${{ gitea.repository }}/actions/runs/${RUN_ID}"
           curl -H "Title: ERROR - Laforge Status Failed: PR ${PR_INDEX}" \
                -H "Click: ${ACTION_URL}" \
                -H "Priority: high" \
@@ -183,28 +189,34 @@ jobs:
       - name: Send NTFY notification
         if: success() && steps.assignee-check.conclusion == 'success'
         env:
-          GITEA_API_URL: ${{ gitea.api_url }}
+          EXTERNAL_BASE_URL: ${{ vars.EXTERNAL_BASE_URL }}
           PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
         run: |
-          # Derive web URL from API URL
-          WEB_URL=$(echo "$GITEA_API_URL" | sed 's|/api/v1.*$||')
+          # Ensure EXTERNAL_BASE_URL is set
+          if [ -z "$EXTERNAL_BASE_URL" ]; then
+            echo "ERROR: EXTERNAL_BASE_URL repository variable is not set"
+            exit 1
+          fi
           curl -H "Title: Laforge run complete: PR ${PR_INDEX}" \
-               -H "Click: ${WEB_URL}/${{ gitea.repository }}/pulls/${PR_INDEX}" \
+               -H "Click: ${EXTERNAL_BASE_URL}/${{ gitea.repository }}/pulls/${PR_INDEX}" \
                -H "Tags: white_check_mark" \
                -d "Click to view PR ${PR_INDEX}" \
                http://ntfy/laforge
 
       - name: Notify workflow failure
-        if: failure() && steps.assignee-check.conclusion == 'success'
+        if: failure() && steps.assignee-check.conclusion == 'success' && steps.run-agent.conclusion != 'failure' && steps.post-status.conclusion != 'failure'
         env:
           PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
-          GITEA_API_URL: ${{ gitea.api_url }}
+          EXTERNAL_BASE_URL: ${{ vars.EXTERNAL_BASE_URL }}
           RUN_ID: ${{ github.run_number }}
         run: |
-          # Derive web URL from API URL
-          WEB_URL=$(echo "$GITEA_API_URL" | sed 's|/api/v1.*$||')
-          curl -H "Title: ERROR - Laforge Agent Failed: PR ${PR_INDEX}" \
-               -H "Click: ${WEB_URL}/${{ gitea.repository }}/pulls/${PR_INDEX}" \
+          # Ensure EXTERNAL_BASE_URL is set
+          if [ -z "$EXTERNAL_BASE_URL" ]; then
+            echo "ERROR: EXTERNAL_BASE_URL repository variable is not set"
+            exit 1
+          fi
+          curl -H "Title: ERROR - Laforge Workflow Failed: PR ${PR_INDEX}" \
+               -H "Click: ${EXTERNAL_BASE_URL}/${{ gitea.repository }}/pulls/${PR_INDEX}" \
                -H "Priority: high" \
                -d "Workflow failed. Check logs." \
                http://ntfy/laforge

@@ -128,7 +128,23 @@ This token allows the workflow to:
 - Post status updates as the "laforge" user (instead of "gitea-actions[bot]")
 - Commit and push changes to pull request branches
 
-## Step 8: Push the Workflow Files
+## Step 8: Configure External Base URL
+
+The workflow sends notifications via NTFY with clickable links to PRs and workflow runs. These links need to use your externally accessible Gitea URL (not the internal Docker service name).
+
+### Add Repository Variable
+
+1. Go to your repository → Settings → Variables
+2. Click **Add Variable**
+3. Name: `EXTERNAL_BASE_URL`
+4. Value: Your external Gitea URL (e.g., `https://gitea.example.com` or `http://localhost:3010`)
+5. Click **Add Variable**
+
+**Important:** Do not include a trailing slash in the URL.
+
+This variable is **required** - the workflow will fail with a clear error message if it is not set.
+
+## Step 9: Push the Workflow Files
 
 The workflow files are already created in `.gitea/workflows/`. You need to commit and push them to your Gitea repository:
 
@@ -150,7 +166,7 @@ git commit -m "Add Gitea Actions configuration"
 git push -u origin main  # or 'master' depending on your default branch
 ```
 
-## Step 9: Test with a Pull Request
+## Step 10: Test with a Pull Request
 
 1. Create a new branch:
    ```bash
