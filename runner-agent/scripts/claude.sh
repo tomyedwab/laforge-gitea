@@ -12,7 +12,21 @@ chmod 600 ~/.claude/.credentials.json
 mkdir -p .claude
 cp /bin/.claude/settings.local.json .claude/
 
-claude --model $MODELNAME --output-format stream-json --verbose -p "Work on the current PR." | node .gitea/workflows/format-claude-output.js
+# Determine prompt based on agent mode
+if [ "$AGENT_MODE" = "critique" ]; then
+    PROMPT="Review the current PR implementation. Focus on:
+- Code quality and best practices
+- Potential bugs or edge cases
+- Performance considerations
+- Architectural decisions
+- Suggestions for improvement
+
+Provide detailed feedback and make any improvements you think are necessary."
+else
+    PROMPT="Work on the current PR."
+fi
+
+claude --model $MODELNAME --output-format stream-json --verbose -p "$PROMPT" | node .gitea/workflows/format-claude-output.js
 
 # Check if there are changes outside of the .pr directory
 if git diff --quiet HEAD -- ':!.pr'; then

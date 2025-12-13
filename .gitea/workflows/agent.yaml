@@ -28,8 +28,6 @@ jobs:
     runs-on: laforge-2
     container:
       image: laforge-2:latest
-      env:
-        MODELNAME: claude-sonnet-4-5-20250929
       volumes:
         - laforge-2_claude-config:/root/.claude-laforge
     steps:
@@ -77,11 +75,25 @@ jobs:
           PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
         run: node .gitea/workflows/fetch-pr.js
 
+      - name: Parse agent command
+        id: parse-agent
+        if: steps.assignee-check.conclusion == 'success'
+        env:
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          GITEA_API_URL: ${{ gitea.api_url }}
+          GITEA_REPO_OWNER: ${{ gitea.repository_owner }}
+          GITEA_REPO_NAME: ${{ gitea.repository }}
+          PR_INDEX: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.number || github.event.pull_request.number }}
+        run: node .gitea/workflows/parse-agent-command.js
+
       - name: Run agent
         id: run-agent
         if: steps.assignee-check.conclusion == 'success'
+        env:
+          MODELNAME: ${{ steps.parse-agent.outputs.model_id }}
+          AGENT_MODE: ${{ steps.parse-agent.outputs.agent_mode }}
         run: |
-          echo "Running Claude agent..."
+          echo "Running Claude agent with model: $MODELNAME (mode: $AGENT_MODE)"
           claude.sh
           echo "Agent completed."
 
