@@ -94,8 +94,9 @@ jobs:
         env:
           MODELNAME: ${{ steps.parse-agent.outputs.model_id }}
           AGENT_MODE: ${{ steps.parse-agent.outputs.agent_mode }}
+          LMSTUDIO_HOST: ${{ vars.LMSTUDIO_HOST }}
         run: |
-          echo "Running Claude agent with model: $MODELNAME (mode: $AGENT_MODE)"
+          echo "Running agent with model: $MODELNAME (mode: $AGENT_MODE)"
           claude.sh
           echo "Agent completed."
 
