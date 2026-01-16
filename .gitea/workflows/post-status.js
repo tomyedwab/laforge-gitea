@@ -59,11 +59,7 @@ function makeApiRequest(path, method, body) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(data ? JSON.parse(data) : null);
         } else {
-          reject(
-            new Error(
-              `HTTP ${res.statusCode}: ${data}`,
-            ),
-          );
+          reject(new Error(`HTTP ${res.statusCode}: ${data}`));
         }
       });
     });
@@ -102,40 +98,36 @@ async function main() {
   const prIndex = process.env.PR_INDEX;
 
   // Get PR data to retrieve the commit SHA
-  const prData = await getGiteaAPI(
-    `/repos/${owner}/${repo}/pulls/${prIndex}`,
-  );
+  const prData = await getGiteaAPI(`/repos/${owner}/${repo}/pulls/${prIndex}`);
   const headSha = prData.head.sha;
   console.log(`PR HEAD commit SHA: ${headSha}`);
 
   let statusData = null;
-  let usingYaml = false;
 
   // Check for YAML file first (new format)
   if (fs.existsSync(yamlStatusFile)) {
-    console.log("Found .pr/status.yaml, using structured format");
     const yamlContent = fs.readFileSync(yamlStatusFile, "utf8");
     try {
       statusData = yaml.load(yamlContent);
       // Ensure default values if not provided
+      console.log("Found .pr/status.yaml, using structured format");
       if (!statusData.file_comments) {
         statusData.file_comments = [];
       }
       if (!statusData.unassign) {
         statusData.unassign = false;
       }
-      usingYaml = true;
     } catch (error) {
-      console.error("Error parsing YAML:", error.message);
-      throw error;
+      // If parsing fails, continue with the content as a string
+      console.log(
+        "Found .pr/status.yaml not in YAML format; using as status message",
+      );
+      statusData = {
+        status: yamlContent,
+        file_comments: [],
+        unassign: false,
+      };
     }
-  } else if (fs.existsSync(mdStatusFile)) {
-    // Fallback to old markdown format
-    console.log(
-      "Found .pr/status.md (legacy format), consider migrating to status.yaml",
-    );
-    const mdContent = fs.readFileSync(mdStatusFile, "utf8");
-    statusData = { status: mdContent, file_comments: [], unassign: false };
   } else {
     console.log("No status file found, skipping status post");
     return;
@@ -143,12 +135,17 @@ async function main() {
 
   // Replace {{COMMIT_SHA}} placeholder in status and file comments
   if (statusData.status) {
-    statusData.status = statusData.status.replace(/\{\{COMMIT_SHA\}\}/g, headSha);
+    statusData.status = statusData.status.replace(
+      /\{\{COMMIT_SHA\}\}/g,
+      headSha,
+    );
   }
   if (statusData.file_comments) {
     statusData.file_comments = statusData.file_comments.map((fc) => ({
       ...fc,
-      comment: fc.comment ? fc.comment.replace(/\{\{COMMIT_SHA\}\}/g, headSha) : fc.comment,
+      comment: fc.comment
+        ? fc.comment.replace(/\{\{COMMIT_SHA\}\}/g, headSha)
+        : fc.comment,
     }));
   }
 
@@ -178,20 +175,17 @@ async function main() {
       try {
         // Post as a review comment on the specific line
         // Note: Gitea uses 'new_position' for line numbers in the diff
-        await postGiteaAPI(
-          `/repos/${owner}/${repo}/pulls/${prIndex}/reviews`,
-          {
-            body: fileComment.comment,
-            event: "COMMENT",
-            comments: [
-              {
-                path: fileComment.file,
-                body: fileComment.comment,
-                new_position: parseInt(fileComment.line),
-              },
-            ],
-          },
-        );
+        await postGiteaAPI(`/repos/${owner}/${repo}/pulls/${prIndex}/reviews`, {
+          body: fileComment.comment,
+          event: "COMMENT",
+          comments: [
+            {
+              path: fileComment.file,
+              body: fileComment.comment,
+              new_position: parseInt(fileComment.line),
+            },
+          ],
+        });
         console.log(
           `Posted comment on ${fileComment.file}:${fileComment.line}`,
         );

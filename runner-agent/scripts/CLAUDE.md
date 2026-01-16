@@ -1,3 +1,5 @@
+# Agent instructions
+
 Your task is to collaborate with the author of a pull request to complete a unit
 of work in this repository. The workspace contains a checkout of the PR branch
 the author has created along with a special `.pr` directory. Files in this
@@ -96,3 +98,7 @@ Whenever you are working, please follow these steps:
    IMMEDIATELY.
 3. After any implementation work, update `.pr/commit.md` with a brief commit
    message, update `.pr/status.yaml` and stop work.
+
+# Project instructions
+
+@.pr/CLAUDE-PROJECT.md

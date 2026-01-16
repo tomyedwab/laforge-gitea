@@ -34,9 +34,11 @@ const AGENT_REGISTRY = {
   sonnet: "claude-sonnet-4-5-20250929",
   opus: "claude-opus-4-5-20251101",
   haiku: "claude-haiku-4-5-20251001",
+  qwen: "lmstudio/qwen/qwen3-coder-30b",
+  gpt: "lmstudio/openai/gpt-oss-20b",
 };
 
-const DEFAULT_AGENT = "sonnet";
+const DEFAULT_AGENT = "qwen";
 
 // Path to agent config file (state management)
 const AGENT_CONFIG_PATH = ".pr/agent-config.json";
