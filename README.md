@@ -1,7 +1,7 @@
 LaForge
 =======
 
-**LaForge** is an AI-powered pull request assistant that integrates Claude AI with Gitea to provide automated code collaboration on self-hosted Git repositories.
+**LaForge** is an AI-powered pull request assistant that integrates LLM agents with Gitea to provide automated code collaboration on self-hosted Git repositories.
 
 ## Overview
 
@@ -19,7 +19,7 @@ LaForge creates an intelligent agent that works alongside developers on pull req
 
 - **Self-Hosted**: Complete control over your code and AI interactions
 - **Gitea Integration**: Works seamlessly with Gitea Actions
-- **Claude AI**: Powered by Anthropic's Claude Sonnet 4.5
+- **Interchangeable agents**: Works with both Claude Code and Opencode.
 - **Collaborative Workflow**: Agent asks for clarification and approval before implementing
 - **Real-time Notifications**: NTFY integration for status updates
 - **Docker-Based**: Easy deployment with Docker Compose
@@ -30,7 +30,7 @@ LaForge consists of four main components:
 
 1. **Gitea Server** - Self-hosted Git service with Actions support
 2. **Act Runner** - CI/CD runner that executes workflows
-3. **LaForge Agent** - Custom Docker container with Claude AI integration
+3. **LaForge Agent** - Custom Docker container with Claude Code/Opencode integration
 4. **NTFY** - Notification service for real-time updates
 
 ```
@@ -52,7 +52,7 @@ LaForge consists of four main components:
 
 - Docker and Docker Compose installed
 - At least 4GB of available RAM
-- Claude API access (for the agent)
+- Claude API access or LM Studio local server
 
 ### Installation
 
@@ -216,6 +216,10 @@ Required variables in Gitea:
 
 - `EXTERNAL_BASE_URL` - Your external Gitea URL (e.g., `https://gitea.example.com`). Used for clickable links in NTFY notifications. Do not include a trailing slash.
 
+Optional variables in Gitea:
+
+- `LMSTUDIO_HOST` - Host for LM Studio, when using non-Claude models.
+
 ### Claude Configuration
 
 The agent uses Claude Sonnet 4.5. Configuration is handled in the Docker container and workflow.
@@ -227,7 +231,7 @@ The agent uses Claude Sonnet 4.5. Configuration is handled in the Docker contain
 Edit `.gitea/workflows/agent.yaml` to:
 
 - Change which events trigger the agent
-- Modify the Claude model used
+- Modify the model used
 - Adjust workflow steps
 
 ### Network Configuration
