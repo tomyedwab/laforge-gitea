@@ -55,7 +55,7 @@ if [[ "$MODELNAME" == "claude-"* ]]; then
 else
     echo "Invoking OpenCode..."
     mkdir -p ~/.config/opencode
-    cat /bin/opencode.json |sed -r "s#%LMSTUDIO_HOST%#$LMSTUDIO_HOST#" > ~/.config/opencode/
+    cat /bin/opencode.json |sed -r "s#%LMSTUDIO_HOST%#$LMSTUDIO_HOST#" > ~/.config/opencode/opencode.json
 
     if [ -f AGENTS.md ]; then
         mv AGENTS.md .pr/AGENTS-PROJECT.md
